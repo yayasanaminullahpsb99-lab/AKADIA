@@ -1,0 +1,166 @@
+{
+  "entities": {
+    "AcademicProfile": {
+      "title": "AcademicProfile",
+      "description": "User profile in SIAKAD Cloud with role, NIM/NIDN, prodi, semester, and IPK",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID" },
+        "fullName": { "type": "string", "description": "Full Name of the user" },
+        "email": { "type": "string", "description": "Email address" },
+        "role": {
+          "type": "string",
+          "enum": ["SUPER_ADMIN", "ADMIN_AKADEMIK", "DOSEN", "MAHASISWA", "CALON_MAHASISWA"],
+          "description": "Active RBAC Role in SIAKAD Cloud"
+        },
+        "nimOrNidn": { "type": "string", "description": "Generated NIM or NIDN" },
+        "prodi": { "type": "string", "description": "Program Studi (e.g. S1 Teknik Informatika)" },
+        "semester": { "type": "integer", "description": "Current active semester" },
+        "ipSemesterLalu": { "type": "number", "description": "Previous semester GPA (IPS)" },
+        "ipk": { "type": "number", "description": "Cumulative GPA (IPK)" },
+        "isUktPaid": { "type": "boolean", "description": "Whether UKT/SPP billing for current semester is paid" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp" }
+      },
+      "required": ["userId", "fullName", "email", "role", "nimOrNidn", "prodi", "semester", "ipSemesterLalu", "ipk", "isUktPaid", "createdAt", "updatedAt"]
+    },
+    "PmbApplicant": {
+      "title": "PmbApplicant",
+      "description": "PMB Online registration, prodi choices, document verification, selection status, and NIM generation",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID" },
+        "registrationNo": { "type": "string", "description": "Unique PMB registration number" },
+        "fullName": { "type": "string", "description": "Applicant full name" },
+        "asalSekolah": { "type": "string", "description": "Origin high school / SMK / MA" },
+        "pilihanProdi1": { "type": "string", "description": "First choice study program" },
+        "pilihanProdi2": { "type": "string", "description": "Second choice study program" },
+        "berkasIjazah": { "type": "boolean", "description": "Whether Ijazah/SKL is uploaded" },
+        "berkasKtp": { "type": "boolean", "description": "Whether KTP/KK is uploaded" },
+        "berkasFoto": { "type": "boolean", "description": "Whether Pas Foto is uploaded" },
+        "vaNumber": { "type": "string", "description": "Virtual Account for form fee" },
+        "formFeePaid": { "type": "boolean", "description": "Form registration payment status" },
+        "statusSeleksi": {
+          "type": "string",
+          "enum": ["MENUNGGU_VERIFIKASI", "TERVERIFIKASI", "LULUS", "TIDAK_LULUS", "AKTIF_NIM"],
+          "description": "Selection and verification status"
+        },
+        "generatedNim": { "type": "string", "description": "Generated NIM upon Daftar Ulang" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "registrationNo", "fullName", "asalSekolah", "pilihanProdi1", "pilihanProdi2", "berkasIjazah", "berkasKtp", "berkasFoto", "vaNumber", "formFeePaid", "statusSeleksi", "generatedNim", "createdAt", "updatedAt"]
+    },
+    "BillingInvoice": {
+      "title": "BillingInvoice",
+      "description": "Tuition & academic billing invoice integrated with Midtrans/Xendit VA/QRIS",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID" },
+        "invoiceNumber": { "type": "string", "description": "Invoice code" },
+        "title": { "type": "string", "description": "Billing description (e.g. UKT Semester Ganjil 2026/2027)" },
+        "category": { "type": "string", "enum": ["FORMULIR_PMB", "UKT_SPP", "SKS", "PEMBANGUNAN"], "description": "Billing category" },
+        "jenjang": { "type": "string", "enum": ["D1", "D3", "S1"], "description": "Degree level" },
+        "amount": { "type": "integer", "description": "Total amount in IDR" },
+        "paymentMethod": { "type": "string", "enum": ["VA_BCA", "VA_MANDIRI", "VA_BNI", "QRIS", "ALFAMART_INDOMARET"], "description": "Selected payment channel" },
+        "vaOrPaymentCode": { "type": "string", "description": "Virtual Account or QRIS reference code" },
+        "status": { "type": "string", "enum": ["UNPAID", "PAID"], "description": "Payment reconciliation status" },
+        "semester": { "type": "string", "description": "Academic period code (e.g. 20261)" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "invoiceNumber", "title", "category", "jenjang", "amount", "paymentMethod", "vaOrPaymentCode", "status", "semester", "createdAt", "updatedAt"]
+    },
+    "KrsEnrollment": {
+      "title": "KrsEnrollment",
+      "description": "Course enrollment (KRS), attendance, and grading (KHS) record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID" },
+        "kodeMk": { "type": "string", "description": "Course code" },
+        "namaMk": { "type": "string", "description": "Course name" },
+        "sks": { "type": "integer", "description": "Credit units (1-6)" },
+        "semester": { "type": "integer", "description": "Course target semester" },
+        "dosenPengampu": { "type": "string", "description": "Lecturer name" },
+        "jadwal": { "type": "string", "description": "Class schedule and room" },
+        "statusApproval": { "type": "string", "enum": ["DRAFT", "DIAJUKAN", "DISETUJUI_PA", "DITOLAK_PA"], "description": "Dosen PA approval status" },
+        "presensiCount": { "type": "integer", "description": "Total attendance meetings recorded (0-16)" },
+        "nilaiTugas": { "type": "number", "description": "Assignment score (0-100)" },
+        "nilaiUts": { "type": "number", "description": "Midterm score (0-100)" },
+        "nilaiUas": { "type": "number", "description": "Final exam score (0-100)" },
+        "nilaiAkhir": { "type": "number", "description": "Weighted final numeric score (0-100)" },
+        "gradeHuruf": { "type": "string", "enum": ["-", "A", "A-", "B+", "B", "B-", "C+", "C", "D", "E"], "description": "Final letter grade" },
+        "bobotIndeks": { "type": "number", "description": "Grade point weight (0.0 - 4.0)" },
+        "syncedPddikti": { "type": "boolean", "description": "Whether synced to PDDIKTI Neo Feeder" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "kodeMk", "namaMk", "sks", "semester", "dosenPengampu", "jadwal", "statusApproval", "presensiCount", "nilaiTugas", "nilaiUts", "nilaiUas", "nilaiAkhir", "gradeHuruf", "bobotIndeks", "syncedPddikti", "createdAt", "updatedAt"]
+    },
+    "CbtAttempt": {
+      "title": "CbtAttempt",
+      "description": "CBT Exam attempt, anti-cheat telemetry, auto-graded MCQ score, and essay grading",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID" },
+        "examCode": { "type": "string", "description": "Exam identifier code" },
+        "kodeMk": { "type": "string", "description": "Associated course code" },
+        "namaUjian": { "type": "string", "description": "Exam title (UTS/UAS/Kuis)" },
+        "jenisUjian": { "type": "string", "enum": ["UTS", "UAS", "KUIS"], "description": "Type of exam" },
+        "mcqScore": { "type": "number", "description": "Auto-calculated Multiple Choice score (0-100)" },
+        "essayAnswer": { "type": "string", "description": "Student essay answer text" },
+        "essayScore": { "type": "number", "description": "Lecturer graded essay score (0-100)" },
+        "finalCbtScore": { "type": "number", "description": "Combined final CBT score (0-100)" },
+        "cheatWarnings": { "type": "integer", "description": "Count of tab-switch / focus loss anti-cheat events" },
+        "autoSubmittedByAntiCheat": { "type": "boolean", "description": "True if auto-submitted due to anti-cheat threshold" },
+        "status": { "type": "string", "enum": ["ONGOING", "SUBMITTED_WAITING_ESSAY", "GRADED"], "description": "CBT grading status" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "examCode", "kodeMk", "namaUjian", "jenisUjian", "mcqScore", "essayAnswer", "essayScore", "finalCbtScore", "cheatWarnings", "autoSubmittedByAntiCheat", "status", "createdAt", "updatedAt"]
+    },
+    "PddiktiSyncLog": {
+      "title": "PddiktiSyncLog",
+      "description": "PDDIKTI Neo Feeder synchronization batch log (Push/Pull EPSBED)",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID" },
+        "endpointAction": { "type": "string", "description": "Neo Feeder WS act name (e.g. InsertMahasiswa, InsertNilaiPerkuliahanKelas)" },
+        "entityType": { "type": "string", "enum": ["MAHASISWA", "DOSEN", "KELAS_KULIAH", "KRS", "NILAI_AKHIR", "KELULUSAN_IJAZAH"], "description": "Type of academic entity" },
+        "direction": { "type": "string", "enum": ["PUSH", "PULL"], "description": "Sync direction" },
+        "recordsProcessed": { "type": "integer", "description": "Count of records synchronized" },
+        "status": { "type": "string", "enum": ["SUCCESS", "PARTIAL_WARNING"], "description": "Sync result status" },
+        "responseSummary": { "type": "string", "description": "Feeder response message" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "endpointAction", "entityType", "direction", "recordsProcessed", "status", "responseSummary", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/AcademicProfile" },
+      "description": "Primary academic user profile and RBAC role context"
+    },
+    "/users/{userId}/pmb_applicants/{applicantId}": {
+      "schema": { "$ref": "#/entities/PmbApplicant" },
+      "description": "PMB Online applications and verification state"
+    },
+    "/users/{userId}/billing_invoices/{invoiceId}": {
+      "schema": { "$ref": "#/entities/BillingInvoice" },
+      "description": "Student tuition & registration billing invoices"
+    },
+    "/users/{userId}/krs_enrollments/{enrollmentId}": {
+      "schema": { "$ref": "#/entities/KrsEnrollment" },
+      "description": "Student KRS enrollments, attendance, and KHS grades"
+    },
+    "/users/{userId}/cbt_attempts/{attemptId}": {
+      "schema": { "$ref": "#/entities/CbtAttempt" },
+      "description": "CBT exam attempts, anti-cheat logs, and grading"
+    },
+    "/users/{userId}/pddikti_logs/{logId}": {
+      "schema": { "$ref": "#/entities/PddiktiSyncLog" },
+      "description": "PDDIKTI Neo Feeder sync logs"
+    }
+  }
+}

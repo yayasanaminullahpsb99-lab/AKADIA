@@ -1,0 +1,222 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function incoming() {
+      return request.resource.data;
+    }
+    function existing() {
+      return resource.data;
+    }
+
+    // 3. Entity Validation Blueprints
+    function isValidAcademicProfile(data) {
+      return data.userId == request.auth.uid &&
+             data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.fullName is string && data.fullName.size() >= 1 && data.fullName.size() <= 120 &&
+             data.email is string && data.email.size() >= 3 && data.email.size() <= 150 &&
+             data.role in ['SUPER_ADMIN', 'ADMIN_AKADEMIK', 'DOSEN', 'MAHASISWA', 'CALON_MAHASISWA'] &&
+             data.nimOrNidn is string && data.nimOrNidn.size() >= 1 && data.nimOrNidn.size() <= 40 &&
+             data.prodi is string && data.prodi.size() >= 2 && data.prodi.size() <= 100 &&
+             data.semester is int && data.semester >= 1 && data.semester <= 14 &&
+             (data.ipSemesterLalu is int || data.ipSemesterLalu is float) && data.ipSemesterLalu >= 0.0 && data.ipSemesterLalu <= 4.0 &&
+             (data.ipk is int || data.ipk is float) && data.ipk >= 0.0 && data.ipk <= 4.0 &&
+             data.isUktPaid is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidPmbApplicant(data) {
+      return data.userId == request.auth.uid &&
+             data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.registrationNo is string && data.registrationNo.size() >= 3 && data.registrationNo.size() <= 40 &&
+             data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 120 &&
+             data.asalSekolah is string && data.asalSekolah.size() >= 2 && data.asalSekolah.size() <= 120 &&
+             data.pilihanProdi1 is string && data.pilihanProdi1.size() >= 2 && data.pilihanProdi1.size() <= 100 &&
+             data.pilihanProdi2 is string && data.pilihanProdi2.size() >= 2 && data.pilihanProdi2.size() <= 100 &&
+             data.berkasIjazah is bool &&
+             data.berkasKtp is bool &&
+             data.berkasFoto is bool &&
+             data.vaNumber is string && data.vaNumber.size() >= 5 && data.vaNumber.size() <= 40 &&
+             data.formFeePaid is bool &&
+             data.statusSeleksi in ['MENUNGGU_VERIFIKASI', 'TERVERIFIKASI', 'LULUS', 'TIDAK_LULUS', 'AKTIF_NIM'] &&
+             data.generatedNim is string && data.generatedNim.size() <= 40 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidBillingInvoice(data) {
+      return data.userId == request.auth.uid &&
+             data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.invoiceNumber is string && data.invoiceNumber.size() >= 3 && data.invoiceNumber.size() <= 50 &&
+             data.title is string && data.title.size() >= 3 && data.title.size() <= 150 &&
+             data.category in ['FORMULIR_PMB', 'UKT_SPP', 'SKS', 'PEMBANGUNAN'] &&
+             data.jenjang in ['D1', 'D3', 'S1'] &&
+             data.amount is int && data.amount >= 0 && data.amount <= 500000000 &&
+             data.paymentMethod in ['VA_BCA', 'VA_MANDIRI', 'VA_BNI', 'QRIS', 'ALFAMART_INDOMARET'] &&
+             data.vaOrPaymentCode is string && data.vaOrPaymentCode.size() >= 3 && data.vaOrPaymentCode.size() <= 80 &&
+             data.status in ['UNPAID', 'PAID'] &&
+             data.semester is string && data.semester.size() >= 3 && data.semester.size() <= 30 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidKrsEnrollment(data) {
+      return data.userId == request.auth.uid &&
+             data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.kodeMk is string && data.kodeMk.size() >= 2 && data.kodeMk.size() <= 30 &&
+             data.namaMk is string && data.namaMk.size() >= 2 && data.namaMk.size() <= 120 &&
+             data.sks is int && data.sks >= 1 && data.sks <= 6 &&
+             data.semester is int && data.semester >= 1 && data.semester <= 14 &&
+             data.dosenPengampu is string && data.dosenPengampu.size() >= 2 && data.dosenPengampu.size() <= 120 &&
+             data.jadwal is string && data.jadwal.size() >= 2 && data.jadwal.size() <= 120 &&
+             data.statusApproval in ['DRAFT', 'DIAJUKAN', 'DISETUJUI_PA', 'DITOLAK_PA'] &&
+             data.presensiCount is int && data.presensiCount >= 0 && data.presensiCount <= 16 &&
+             (data.nilaiTugas is int || data.nilaiTugas is float) && data.nilaiTugas >= 0.0 && data.nilaiTugas <= 100.0 &&
+             (data.nilaiUts is int || data.nilaiUts is float) && data.nilaiUts >= 0.0 && data.nilaiUts <= 100.0 &&
+             (data.nilaiUas is int || data.nilaiUas is float) && data.nilaiUas >= 0.0 && data.nilaiUas <= 100.0 &&
+             (data.nilaiAkhir is int || data.nilaiAkhir is float) && data.nilaiAkhir >= 0.0 && data.nilaiAkhir <= 100.0 &&
+             data.gradeHuruf in ['-', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'D', 'E'] &&
+             (data.bobotIndeks is int || data.bobotIndeks is float) && data.bobotIndeks >= 0.0 && data.bobotIndeks <= 4.0 &&
+             data.syncedPddikti is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidCbtAttempt(data) {
+      return data.userId == request.auth.uid &&
+             data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.examCode is string && data.examCode.size() >= 2 && data.examCode.size() <= 40 &&
+             data.kodeMk is string && data.kodeMk.size() >= 2 && data.kodeMk.size() <= 30 &&
+             data.namaUjian is string && data.namaUjian.size() >= 2 && data.namaUjian.size() <= 150 &&
+             data.jenisUjian in ['UTS', 'UAS', 'KUIS'] &&
+             (data.mcqScore is int || data.mcqScore is float) && data.mcqScore >= 0.0 && data.mcqScore <= 100.0 &&
+             data.essayAnswer is string && data.essayAnswer.size() <= 4000 &&
+             (data.essayScore is int || data.essayScore is float) && data.essayScore >= 0.0 && data.essayScore <= 100.0 &&
+             (data.finalCbtScore is int || data.finalCbtScore is float) && data.finalCbtScore >= 0.0 && data.finalCbtScore <= 100.0 &&
+             data.cheatWarnings is int && data.cheatWarnings >= 0 && data.cheatWarnings <= 100 &&
+             data.autoSubmittedByAntiCheat is bool &&
+             data.status in ['ONGOING', 'SUBMITTED_WAITING_ESSAY', 'GRADED'] &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidPddiktiSyncLog(data) {
+      return data.userId == request.auth.uid &&
+             data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.endpointAction is string && data.endpointAction.size() >= 2 && data.endpointAction.size() <= 80 &&
+             data.entityType in ['MAHASISWA', 'DOSEN', 'KELAS_KULIAH', 'KRS', 'NILAI_AKHIR', 'KELULUSAN_IJAZAH'] &&
+             data.direction in ['PUSH', 'PULL'] &&
+             data.recordsProcessed is int && data.recordsProcessed >= 0 && data.recordsProcessed <= 100000 &&
+             data.status in ['SUCCESS', 'PARTIAL_WARNING'] &&
+             data.responseSummary is string && data.responseSummary.size() >= 2 && data.responseSummary.size() <= 500 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // 4. Collection Rules
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+      allow create: if isOwner(userId) && isValidId(userId) &&
+                       incoming().keys().hasAll(['userId', 'fullName', 'email', 'role', 'nimOrNidn', 'prodi', 'semester', 'ipSemesterLalu', 'ipk', 'isUktPaid', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'fullName', 'email', 'role', 'nimOrNidn', 'prodi', 'semester', 'ipSemesterLalu', 'ipk', 'isUktPaid', 'createdAt', 'updatedAt']) &&
+                       isValidAcademicProfile(incoming());
+      allow update: if isOwner(userId) && isValidId(userId) &&
+                       isValidAcademicProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'email', 'role', 'nimOrNidn', 'prodi', 'semester', 'ipSemesterLalu', 'ipk', 'isUktPaid', 'updatedAt']);
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      match /pmb_applicants/{applicantId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(applicantId);
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(applicantId) &&
+                         incoming().keys().hasAll(['userId', 'registrationNo', 'fullName', 'asalSekolah', 'pilihanProdi1', 'pilihanProdi2', 'berkasIjazah', 'berkasKtp', 'berkasFoto', 'vaNumber', 'formFeePaid', 'statusSeleksi', 'generatedNim', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'registrationNo', 'fullName', 'asalSekolah', 'pilihanProdi1', 'pilihanProdi2', 'berkasIjazah', 'berkasKtp', 'berkasFoto', 'vaNumber', 'formFeePaid', 'statusSeleksi', 'generatedNim', 'createdAt', 'updatedAt']) &&
+                         isValidPmbApplicant(incoming());
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(applicantId) &&
+                         isValidPmbApplicant(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'asalSekolah', 'pilihanProdi1', 'pilihanProdi2', 'berkasIjazah', 'berkasKtp', 'berkasFoto', 'formFeePaid', 'statusSeleksi', 'generatedNim', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(applicantId);
+      }
+
+      match /billing_invoices/{invoiceId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(invoiceId);
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(invoiceId) &&
+                         incoming().keys().hasAll(['userId', 'invoiceNumber', 'title', 'category', 'jenjang', 'amount', 'paymentMethod', 'vaOrPaymentCode', 'status', 'semester', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'invoiceNumber', 'title', 'category', 'jenjang', 'amount', 'paymentMethod', 'vaOrPaymentCode', 'status', 'semester', 'createdAt', 'updatedAt']) &&
+                         isValidBillingInvoice(incoming());
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(invoiceId) &&
+                         isValidBillingInvoice(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['paymentMethod', 'vaOrPaymentCode', 'status', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(invoiceId);
+      }
+
+      match /krs_enrollments/{enrollmentId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(enrollmentId);
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(enrollmentId) &&
+                         incoming().keys().hasAll(['userId', 'kodeMk', 'namaMk', 'sks', 'semester', 'dosenPengampu', 'jadwal', 'statusApproval', 'presensiCount', 'nilaiTugas', 'nilaiUts', 'nilaiUas', 'nilaiAkhir', 'gradeHuruf', 'bobotIndeks', 'syncedPddikti', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'kodeMk', 'namaMk', 'sks', 'semester', 'dosenPengampu', 'jadwal', 'statusApproval', 'presensiCount', 'nilaiTugas', 'nilaiUts', 'nilaiUas', 'nilaiAkhir', 'gradeHuruf', 'bobotIndeks', 'syncedPddikti', 'createdAt', 'updatedAt']) &&
+                         isValidKrsEnrollment(incoming());
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(enrollmentId) &&
+                         isValidKrsEnrollment(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['statusApproval', 'presensiCount', 'nilaiTugas', 'nilaiUts', 'nilaiUas', 'nilaiAkhir', 'gradeHuruf', 'bobotIndeks', 'syncedPddikti', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(enrollmentId);
+      }
+
+      match /cbt_attempts/{attemptId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(attemptId);
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(attemptId) &&
+                         incoming().keys().hasAll(['userId', 'examCode', 'kodeMk', 'namaUjian', 'jenisUjian', 'mcqScore', 'essayAnswer', 'essayScore', 'finalCbtScore', 'cheatWarnings', 'autoSubmittedByAntiCheat', 'status', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'examCode', 'kodeMk', 'namaUjian', 'jenisUjian', 'mcqScore', 'essayAnswer', 'essayScore', 'finalCbtScore', 'cheatWarnings', 'autoSubmittedByAntiCheat', 'status', 'createdAt', 'updatedAt']) &&
+                         isValidCbtAttempt(incoming());
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(attemptId) &&
+                         isValidCbtAttempt(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['mcqScore', 'essayAnswer', 'essayScore', 'finalCbtScore', 'cheatWarnings', 'autoSubmittedByAntiCheat', 'status', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(attemptId);
+      }
+
+      match /pddikti_logs/{logId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(logId);
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(logId) &&
+                         incoming().keys().hasAll(['userId', 'endpointAction', 'entityType', 'direction', 'recordsProcessed', 'status', 'responseSummary', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'endpointAction', 'entityType', 'direction', 'recordsProcessed', 'status', 'responseSummary', 'createdAt', 'updatedAt']) &&
+                         isValidPddiktiSyncLog(incoming());
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(logId) &&
+                         isValidPddiktiSyncLog(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'responseSummary', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(logId);
+      }
+    }
+  }
+}

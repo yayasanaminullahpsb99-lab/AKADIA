@@ -1,0 +1,6 @@
+{
+  "name": "SIAKAD Cloud",
+  "description": "Sistem Informasi Akademik Perguruan Tinggi berbasis Cloud terintegrasi (PMB Online, Billing, KRS/KHS, Ujian CBT Anti-Cheat, PDDIKTI Feeder, dan Blueprint Arsitektur)",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
